@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 def generate_output_name(input_name):
 	fname, ext = os.path.splitext(input_name)
@@ -26,6 +27,8 @@ def process_line(line):
 	return '%s;%s;%s;%f;%f\n' % (date, parts[0], description, credit_amount, debit_amount)
 
 def process(input_name, output_name):
+	assert os.path.isfile(input_name)
+
 	with open(input_name) as f:
 		in_lines = f.readlines()
 
@@ -42,10 +45,31 @@ def process(input_name, output_name):
 		f.writelines(out_lines)
 	
 
+def parse_args():
+	parser = argparse.ArgumentParser(description='Convert an Amazon Credit Card CSV file for importing into GNUCash')
+	parser.add_argument('input_name', help='The name of the input CSV file.')
+	parser.add_argument('-o', required=False, default=None, help='The name of the output filename')
+	parser.add_argument('-f', action='store_true', help='Overwrite the output file if it exists')
+
+	return parser.parse_args()
 
 def main():
-	input_name = "input.csv"
-	output_name = generate_output_name(input_name)
+	args = parse_args()
+
+	input_name = args.input_name
+	if args.o:
+		output_name = args.o
+	else:
+		output_name = generate_output_name(input_name)
+
+	if os.path.isfile(output_name):
+		print "The output file %s already exists" % output_name
+		if not args.f:
+			print "exiting"
+			sys.exit(1)
+		else:
+			print "Overwriting due to -f flag!"
+
 	process(input_name, output_name)
 
 
